@@ -1,7 +1,7 @@
-import { Adapter } from 'next-auth/adapters'
-import { prisma } from '../prisma'
-import { parseCookies, destroyCookie } from 'nookies'
 import { NextApiRequest, NextApiResponse } from 'next'
+import { Adapter } from 'next-auth/adapters'
+import { parseCookies, destroyCookie } from 'nookies'
+import { prisma } from '../prisma'
 
 export function PrismaAdapter(
   req: NextApiRequest,
@@ -25,6 +25,7 @@ export function PrismaAdapter(
           avatar_url: user.avatar_url,
         },
       })
+
       destroyCookie({ res }, '@ignitecall:userId', {
         path: '/',
       })
@@ -60,11 +61,15 @@ export function PrismaAdapter(
       }
     },
     async getUserByEmail(email) {
-      const user = await prisma.user.findUniqueOrThrow({
+      const user = await prisma.user.findUnique({
         where: {
           email,
         },
       })
+
+      if (!user) {
+        return null
+      }
 
       return {
         id: user.id,
@@ -75,7 +80,6 @@ export function PrismaAdapter(
         avatar_url: user.avatar_url!,
       }
     },
-
     async getUserByAccount({ providerAccountId, provider }) {
       const account = await prisma.account.findUnique({
         where: {
@@ -108,7 +112,7 @@ export function PrismaAdapter(
     async updateUser(user) {
       const prismaUser = await prisma.user.update({
         where: {
-          id: user.id,
+          id: user.id!,
         },
         data: {
           name: user.name,
